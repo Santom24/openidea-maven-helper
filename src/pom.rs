@@ -183,11 +183,18 @@ fn line_indent(src: &str, at: usize) -> String {
     }
 }
 
-/// An insertion of `text` at byte offset `at`.
+/// Replaces bytes `start..end` with `text` (an insertion when they are equal).
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Insert {
-    pub at: usize,
+pub struct Edit {
+    pub start: usize,
+    pub end: usize,
     pub text: String,
+}
+
+impl Edit {
+    pub fn apply(&self, src: &str) -> String {
+        format!("{}{}{}", &src[..self.start], self.text, &src[self.end..])
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -207,7 +214,7 @@ pub fn exclusion_edit(
     artifact: &str,
     ex_group: &str,
     ex_artifact: &str,
-) -> Result<Insert, ExcludeError> {
+) -> Result<Edit, ExcludeError> {
     let all = elements(src);
     let dep = find_dependency(src, group, artifact)
         .ok_or_else(|| ExcludeError::NotDeclared(format!("{group}:{artifact}")))?;
@@ -227,27 +234,48 @@ pub fn exclusion_edit(
         if already {
             return Err(ExcludeError::AlreadyExcluded);
         }
-        if exclusions.content_end > exclusions.content_start {
-            let ind = line_indent(src, exclusions.start);
-            let close_ind = line_indent(src, exclusions.content_end);
-            let p = if close_ind.is_empty() {
-                format!("{nl}{ind}{unit}")
-            } else {
-                unit.clone()
-            };
-            let i1 = format!("{ind}{unit}");
-            let i2 = format!("{i1}{unit}");
-            let text = format!(
-                "{p}<exclusion>{nl}{i2}<groupId>{ex_group}</groupId>{nl}{i2}<artifactId>{ex_artifact}</artifactId>{nl}{i1}</exclusion>{nl}{close_ind}"
-            );
-            return Ok(Insert {
-                at: exclusions.content_end,
-                text,
+        // Indentation of <exclusions>: its own line's, else one level under <dependency>.
+        let i1 = Some(line_indent(src, exclusions.start))
+            .filter(|i| !i.is_empty())
+            .unwrap_or_else(|| format!("{}{unit}", line_indent(src, dep.start)));
+        let i2 = format!("{i1}{unit}");
+        let i3 = format!("{i2}{unit}");
+        let exclusion = format!(
+            "<exclusion>{nl}{i3}<groupId>{ex_group}</groupId>{nl}{i3}<artifactId>{ex_artifact}</artifactId>{nl}{i2}</exclusion>"
+        );
+        let content = &src[exclusions.content_start..exclusions.content_end];
+        let self_closing = exclusions.content_start == exclusions.end;
+        if self_closing {
+            // <exclusions/>: becomes the container, still the only one.
+            return Ok(Edit {
+                start: exclusions.start,
+                end: exclusions.end,
+                text: format!("<exclusions>{nl}{i2}{exclusion}{nl}{i1}</exclusions>"),
             });
         }
+        if content.trim().is_empty() {
+            // <exclusions></exclusions> or only whitespace inside: fill it.
+            return Ok(Edit {
+                start: exclusions.content_start,
+                end: exclusions.content_end,
+                text: format!("{nl}{i2}{exclusion}{nl}{i1}"),
+            });
+        }
+        // Populated: append after the last <exclusion>, before </exclusions>.
+        let close_ind = line_indent(src, exclusions.content_end);
+        let lead = if close_ind.is_empty() {
+            format!("{nl}{i2}")
+        } else {
+            unit.clone()
+        };
+        return Ok(Edit {
+            start: exclusions.content_end,
+            end: exclusions.content_end,
+            text: format!("{lead}{exclusion}{nl}{close_ind}"),
+        });
     }
 
-    // No (usable) <exclusions>: add one before </dependency>.
+    // No <exclusions>: add one before </dependency>.
     if dep.content_end == dep.content_start {
         return Err(ExcludeError::NotDeclared(format!("{group}:{artifact}")));
     }
@@ -264,8 +292,9 @@ pub fn exclusion_edit(
     let text = format!(
         "{p}<exclusions>{nl}{i2}<exclusion>{nl}{i3}<groupId>{ex_group}</groupId>{nl}{i3}<artifactId>{ex_artifact}</artifactId>{nl}{i2}</exclusion>{nl}{i1}</exclusions>{nl}{close_ind}"
     );
-    Ok(Insert {
-        at: dep.content_end,
+    Ok(Edit {
+        start: dep.content_end,
+        end: dep.content_end,
         text,
     })
 }
@@ -335,8 +364,8 @@ mod tests {
         );
     }
 
-    fn apply(src: &str, ins: &Insert) -> String {
-        format!("{}{}{}", &src[..ins.at], ins.text, &src[ins.at..])
+    fn apply(src: &str, edit: &Edit) -> String {
+        edit.apply(src)
     }
 
     #[test]
@@ -387,6 +416,94 @@ mod tests {
             exclusion_edit(POM, "org.slf4j", "slf4j-api", "a", "b"),
             Err(ExcludeError::AlreadyExcluded)
         );
+    }
+
+    /// A POM whose dependency g:a holds `block` (an <exclusions> form, or nothing).
+    fn pom_with(block: &str) -> String {
+        let block = if block.is_empty() {
+            String::new()
+        } else {
+            format!("      {block}\n")
+        };
+        format!(
+            "<project>\n  <modelVersion>4.0.0</modelVersion>\n  <groupId>t</groupId>\n  <artifactId>t</artifactId>\n  <version>1</version>\n  <dependencies>\n    <dependency>\n      <groupId>g</groupId>\n      <artifactId>a</artifactId>\n      <version>1</version>\n{block}    </dependency>\n  </dependencies>\n</project>\n"
+        )
+    }
+
+    const EXCLUDED_XY: &str = "      <version>1</version>
+      <exclusions>
+        <exclusion>
+          <groupId>x</groupId>
+          <artifactId>y</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>";
+
+    #[test]
+    fn every_exclusions_form_ends_with_one_container() {
+        let populated = "<exclusions>\n        <exclusion>\n          <groupId>p</groupId>\n          <artifactId>q</artifactId>\n        </exclusion>\n      </exclusions>";
+        let cases = [
+            ("missing", ""),
+            ("self-closing", "<exclusions/>"),
+            ("self-closing with space", "<exclusions />"),
+            ("empty pair", "<exclusions></exclusions>"),
+            ("whitespace only", "<exclusions>\n      </exclusions>"),
+            ("populated", populated),
+        ];
+        for (name, block) in cases {
+            let src = pom_with(block);
+            let out = exclusion_edit(&src, "g", "a", "x", "y")
+                .unwrap()
+                .apply(&src);
+            assert_eq!(
+                out.matches("<exclusions").count(),
+                1,
+                "{name}: one container\n{out}"
+            );
+            assert_eq!(out.matches("</exclusions>").count(), 1, "{name}\n{out}");
+            assert!(out.contains("<groupId>x</groupId>"), "{name}\n{out}");
+            if name == "populated" {
+                assert!(out.contains(
+                    "          <artifactId>q</artifactId>\n        </exclusion>\n        <exclusion>\n          <groupId>x</groupId>"
+                ), "{name}\n{out}");
+            } else {
+                assert!(
+                    out.contains(EXCLUDED_XY),
+                    "{name}: same layout as a new container\n{out}"
+                );
+            }
+            // The result is still well-formed and the dependency still found.
+            assert!(find_dependency(&out, "g", "a").is_some(), "{name}");
+            // Excluding again is refused; another artifact goes in the same container.
+            assert_eq!(
+                exclusion_edit(&out, "g", "a", "x", "y"),
+                Err(ExcludeError::AlreadyExcluded),
+                "{name}"
+            );
+            let out2 = exclusion_edit(&out, "g", "a", "z", "w")
+                .unwrap()
+                .apply(&out);
+            assert_eq!(
+                out2.matches("<exclusions").count(),
+                1,
+                "{name}: second exclusion\n{out2}"
+            );
+            assert!(out2.contains("<artifactId>w</artifactId>"), "{name}");
+            // MH_DUMP_DIR=dir cargo test: the results, to check against the POM schema.
+            if let Ok(dir) = std::env::var("MH_DUMP_DIR") {
+                let file = name.replace(' ', "-");
+                std::fs::write(format!("{dir}/pom-{file}.xml"), &out).unwrap();
+                std::fs::write(format!("{dir}/pom-{file}-2.xml"), &out2).unwrap();
+            }
+        }
+    }
+
+    #[test]
+    fn exclusions_on_one_line_with_the_dependency() {
+        let src = "<project><dependencies><dependency><groupId>g</groupId><artifactId>a</artifactId><exclusions/></dependency></dependencies></project>";
+        let out = exclusion_edit(src, "g", "a", "x", "y").unwrap().apply(src);
+        assert_eq!(out.matches("<exclusions").count(), 1, "{out}");
+        assert!(out.contains("<artifactId>y</artifactId>"));
     }
 
     #[test]

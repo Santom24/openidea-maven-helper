@@ -193,11 +193,14 @@ impl MavenHelper {
                         Error::Invalid(format!("{xg}:{xa} is already excluded from {g}:{a}."))
                     }
                 })?;
-                let at = text::position(&doc.text, ins.at);
+                let range = Range::new(
+                    text::position(&doc.text, ins.start),
+                    text::position(&doc.text, ins.end),
+                );
                 editor.apply_edits(
                     doc.version,
                     &[TextEdit {
-                        range: Range::new(at, at),
+                        range,
                         text: ins.text,
                     }],
                 )?;
@@ -909,6 +912,37 @@ mod tests {
             r#"{"op":"exclude","nonce":4,"dep":{"g":"org.other","a":"thing"},"target":{"g":"commons-logging","a":"commons-logging"}}"#,
         );
         assert_eq!(r["op"], "error");
+    }
+
+    #[test]
+    fn exclude_fills_an_empty_exclusions_element() {
+        // Both empty forms through the page's handler: one container afterwards.
+        for empty in ["<exclusions/>", "<exclusions></exclusions>"] {
+            let src = POM.replace(
+                "      <artifactId>thing</artifactId>\n",
+                &format!("      <artifactId>thing</artifactId>\n      {empty}\n"),
+            );
+            let host = MockHost::install().with_capabilities(CAPS);
+            host.open_editor("/project/pom.xml", "xml", &src, &[]);
+            let r = send(
+                &host,
+                r#"{"op":"exclude","nonce":9,"dep":{"g":"org.other","a":"thing"},"target":{"g":"x","a":"y"}}"#,
+            );
+            assert_eq!(r["op"], "done", "{empty}: {r}");
+            let out = host.editor_text();
+            assert_eq!(out.matches("<exclusions").count(), 1, "{empty}\n{out}");
+            assert!(out.contains(
+                "      <artifactId>thing</artifactId>\n      <exclusions>\n        <exclusion>\n          <groupId>x</groupId>\n          <artifactId>y</artifactId>\n        </exclusion>\n      </exclusions>\n    </dependency>"
+            ), "{empty}\n{out}");
+            if let Ok(dir) = std::env::var("MH_DUMP_DIR") {
+                let name = if empty.ends_with("/>") {
+                    "self-closing"
+                } else {
+                    "empty-pair"
+                };
+                std::fs::write(format!("{dir}/{name}.xml"), &out).unwrap();
+            }
+        }
     }
 
     #[test]
