@@ -8,12 +8,16 @@ key="${1:?usage: scripts/release.sh <publisher key file>}"
 publisher="fsantomero"
 cd "$(dirname "$0")/.."
 
-# cargo and openidea-plugin live in ~/.cargo/bin, which isn't always on PATH;
-# a Homebrew rustup keeps cargo in its toolchain directory.
+# openidea-plugin lives in ~/.cargo/bin, which isn't always on PATH.
 export PATH="$HOME/.cargo/bin:$PATH"
-if ! command -v cargo >/dev/null && command -v rustup >/dev/null; then
-  PATH="$(dirname "$(rustup which cargo)"):$PATH"
-fi
+
+# Reproducible build: the toolchain pinned in rust-toolchain.toml, and the
+# cargo home (whose path ends up in panic messages) mapped to /cargo, as the
+# Build workflow does. Anyone can rebuild the release and get the same wasm.
+toolchain=$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml)
+rustup toolchain install "$toolchain" --profile minimal --target wasm32-wasip2 >/dev/null
+export PATH="$(dirname "$(rustup which cargo --toolchain "$toolchain")"):$PATH"
+export RUSTFLAGS="--remap-path-prefix=${CARGO_HOME:-$HOME/.cargo}=/cargo"
 
 id=$(sed -n 's/^id = "\(.*\)"/\1/p' plugin.toml | head -1)
 version=$(sed -n 's/^version = "\(.*\)"/\1/p' plugin.toml | head -1)
@@ -25,6 +29,7 @@ fi
 
 cargo test --quiet
 openidea-plugin build
+echo "wasm sha256: $(shasum -a 256 dist/plugin.wasm | cut -d' ' -f1)"
 openidea-plugin pack . --key "$key" --publisher "$publisher"
 
 package="$id-$version.oiplugin"

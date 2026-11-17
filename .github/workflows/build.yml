@@ -1,0 +1,89 @@
+# Rebuilds the plugin's component from source in public and, for a release,
+# checks that the published package carries exactly that component.
+#
+# - On a published release: builds the release tag and compares.
+# - By hand (Actions › Build › Run workflow): any ref; for a release tag the
+#   package is compared too. `cargo_home` is the path the release build
+#   mapped the cargo home to: /cargo from 0.1.2 on (scripts/release.sh);
+#   v0.1.1 was built without mapping, so its cargo home path
+#   /Users/federicosantomero/.cargo is in it.
+name: Build
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Tag, branch or commit to build
+        default: main
+      cargo_home:
+        description: Path the cargo home is mapped to (panic message paths)
+        default: /cargo
+      toolchain:
+        description: Rust toolchain, when the ref has no rust-toolchain.toml
+        default: "1.100.0"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      REF: ${{ github.event.release.tag_name || inputs.ref }}
+      CARGO_HOME_MAP: ${{ inputs.cargo_home || '/cargo' }}
+      FALLBACK_TOOLCHAIN: ${{ inputs.toolchain || '1.100.0' }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.REF }}
+
+      - name: Toolchain
+        run: |
+          toolchain=$(sed -n 's/^channel = "\(.*\)"/\1/p' rust-toolchain.toml 2>/dev/null || true)
+          toolchain=${toolchain:-$FALLBACK_TOOLCHAIN}
+          rustup toolchain install "$toolchain" --profile minimal --target wasm32-wasip2
+          echo "TOOLCHAIN=$toolchain" >> "$GITHUB_ENV"
+          rustup run "$toolchain" rustc -Vv
+
+      - name: Test
+        run: rustup run "$TOOLCHAIN" cargo test --locked
+
+      - name: Build the component
+        run: |
+          export RUSTFLAGS="--remap-path-prefix=$HOME/.cargo=$CARGO_HOME_MAP"
+          rustup run "$TOOLCHAIN" cargo build --release --locked --target wasm32-wasip2
+          wasm=$(ls target/wasm32-wasip2/release/*.wasm)
+          cp "$wasm" plugin.wasm
+          sha=$(sha256sum plugin.wasm | cut -d' ' -f1)
+          echo "WASM_SHA=$sha" >> "$GITHUB_ENV"
+          {
+            echo "### Build of \`$REF\` ($(git rev-parse HEAD))"
+            echo "- toolchain: \`$TOOLCHAIN\`, cargo home mapped to \`$CARGO_HOME_MAP\`"
+            echo "- \`plugin.wasm\`: $(stat -c %s plugin.wasm) bytes, sha256 \`$sha\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-wasm-${{ env.REF }}
+          path: plugin.wasm
+
+      - name: Compare with the released package
+        run: |
+          if ! gh release view "$REF" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "- no release named \`$REF\`: nothing to compare" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          mkdir released
+          gh release download "$REF" -R "$GITHUB_REPOSITORY" -p '*.oiplugin' -D released
+          unzip -q -o released/*.oiplugin dist/plugin.wasm -d released
+          released=$(sha256sum released/dist/plugin.wasm | cut -d' ' -f1)
+          echo "- released package's \`dist/plugin.wasm\`: sha256 \`$released\`" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$released" = "$WASM_SHA" ]; then
+            echo "- **identical**: the package's component is this build" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- **different**" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi

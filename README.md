@@ -117,6 +117,25 @@ openidea-plugin link     # load this folder in the IDE, then Reload Plugins
 Release: `scripts/release.sh <path-to-key>` builds, tests, signs and prints the
 package's SHA-256; `publishing/` has the registry entries.
 
+### Reproducible builds
+
+The component is reproducible bit for bit: Rust `1.100.0` (pinned in
+`rust-toolchain.toml`), target `wasm32-wasip2`, `Cargo.lock`, and the cargo
+home mapped to a fixed path, the only machine-specific input (it appears in
+panic-message paths):
+
+```sh
+RUSTFLAGS="--remap-path-prefix=$HOME/.cargo=/cargo" \
+  cargo build --release --locked --target wasm32-wasip2
+```
+
+`openidea-plugin build` runs that cargo build and copies the result to
+`dist/plugin.wasm`. The **Build** workflow does the same on GitHub for every
+published release and checks that the release's package contains exactly that
+component. v0.1.1 predates the mapping: rebuild it with
+`--remap-path-prefix=$HOME/.cargo=/Users/federicosantomero/.cargo` (the
+workflow's `cargo_home` input).
+
 | Path                   | What                                                              |
 | ---------------------- | ----------------------------------------------------------------- |
 | `plugin.toml`          | Manifest: custom editor, commands, menus, run configurations      |
