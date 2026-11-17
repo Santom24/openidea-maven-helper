@@ -1,0 +1,6 @@
+/target
+/dist
+*.oiplugin
+# Publisher signing keys: never commit them.
+*.key
+.DS_Store

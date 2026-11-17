@@ -1,0 +1,23 @@
+{
+  "properties": {
+    "goals": {
+      "type": "string",
+      "title": "Goals",
+      "description": "Goals offered by Run Maven › Other Goal…, separated by commas or new lines. Each entry may hold several goals and options (clean install -DskipTests).",
+      "multiline": true,
+      "default": "clean, validate, compile, test, package, verify, install, deploy, clean install, dependency:tree"
+    },
+    "extraArgs": {
+      "type": "string",
+      "title": "Extra arguments",
+      "description": "Added to every run before the goals, e.g. -o or -T 1C.",
+      "default": ""
+    },
+    "debugPort": {
+      "type": "integer",
+      "title": "Debug port",
+      "description": "Debug Maven makes the JVMs Maven starts for tests (Surefire, Failsafe) and spring-boot:run wait for a debugger on this port; attach with a Remote JVM Debug configuration.",
+      "default": 5005
+    }
+  }
+}

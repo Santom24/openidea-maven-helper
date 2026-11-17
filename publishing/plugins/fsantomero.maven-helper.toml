@@ -1,0 +1,10 @@
+# Copy to plugins/fsantomero.maven-helper.toml in https://github.com/l0ng-ai/openidea-plugins.
+# A new version adds another [[versions]] table; keep the earlier ones.
+repository = "https://github.com/Santom24/openidea-maven-helper"
+# Offered under "Suggested for This Project" in Maven projects.
+suggest = ["pom.xml"]
+
+[[versions]]
+version = "0.1.0"
+package = "https://github.com/Santom24/openidea-maven-helper/releases/download/v0.1.0/fsantomero.maven-helper-0.1.0.oiplugin"
+sha256 = "<sha256 printed by scripts/release.sh>"

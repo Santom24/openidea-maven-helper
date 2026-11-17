@@ -1,0 +1,6 @@
+# Copy to publishers/fsantomero.toml in https://github.com/l0ng-ai/openidea-plugins
+# (first pull request only).
+name = "Federico Santomero"
+owners = ["Santom24"]                  # GitHub accounts that may change these entries
+keys = ["<public key printed by: openidea-plugin keygen ~/fsantomero.key>"]
+revoked-keys = []

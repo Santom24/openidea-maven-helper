@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dependency Analyzer</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="toolbar" role="toolbar" aria-label="Dependency Analyzer">
+      <div class="modes" role="radiogroup" aria-label="Show">
+        <label><input type="radio" name="mode" value="conflicts" checked /> Conflicts</label>
+        <label><input type="radio" name="mode" value="list" /> All Dependencies as List</label>
+        <label><input type="radio" name="mode" value="tree" /> All Dependencies as Tree</label>
+      </div>
+      <span class="sep"></span>
+      <input id="search" type="search" placeholder="Search artifacts" aria-label="Search artifacts" />
+      <label class="check"><input id="show-group" type="checkbox" /> Show GroupId</label>
+      <label class="check"><input id="show-scope" type="checkbox" checked /> Show scope</label>
+      <span class="grow"></span>
+      <button id="expand" title="Expand all" hidden>Expand</button>
+      <button id="collapse" title="Collapse all" hidden>Collapse</button>
+      <button id="refresh" title="Read the graph again">Refresh</button>
+    </div>
+    <div class="panes">
+      <div id="left" class="pane left" role="tree" tabindex="0" aria-label="Dependencies"></div>
+      <div class="divider"></div>
+      <div id="right" class="pane right" aria-label="Paths to the selected artifact"></div>
+    </div>
+    <div id="status" class="status" role="status"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>

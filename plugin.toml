@@ -1,0 +1,746 @@
+id = "fsantomero.maven-helper"
+name = "Maven Helper"
+version = "0.1.0"
+description = "Run and debug Maven goals from the right-click menu on any module, saved goals, and a Dependency Analyzer tab on pom.xml with one-click exclusions. Inspired by Maven Helper for IntelliJ IDEA."
+authors = ["Federico Santomero"]
+license = "Apache-2.0"
+homepage = "https://github.com/Santom24/openidea-maven-helper"
+change-notes = "0.1.0 — first release: Run Maven / Debug Maven submenus on files, folders and editors (module = nearest pom.xml); goals in the Run tool window with colours; New Goal… / Saved Goals… / Remove Saved Goals…, saved goals as run configurations; Reimport; Dependency Analyzer tab on pom.xml with conflicts, tree, paths, Exclude and Jump to declaration."
+categories = ["tools", "frameworks"]
+# build.dependencies (the IDE's resolved Maven graph) is API 1.10.
+engines.openidea = "^1.10"
+icon = "icons/maven-helper.svg"
+wasm = "dist/plugin.wasm"
+activation = ["on-view:analyzer"]
+
+[capabilities]
+# editor.read / editor.write: the analyzer reads its pom.xml and adds <exclusion>s to it.
+# project.read: find the module's pom.xml for the current file.
+# build.read: the dependency graph the IDE resolved at the last Maven reload.
+# storage: the last goal run (Re-run) and the saved goals.
+# process:mvn: run goals (Settings › Plugins can point it at another executable, e.g. a wrapper).
+required = ["editor.read", "editor.write", "project.read", "build.read", "storage", "process:mvn"]
+# ide.commands: Reimport runs the IDE's "Reload All Maven Projects" action. Without it
+# everything else works.
+optional = ["ide.commands"]
+
+[[contributes.customEditors]]
+id = "analyzer"
+title = "Dependency Analyzer"
+patterns = ["pom.xml"]
+priority = "default"
+layout = "split"
+web = "web/index.html"
+
+[[contributes.commands]]
+id = "run.clean"
+title = "clean"
+category = "Run Maven"
+icon = "maven-goal"
+
+[[contributes.commands]]
+id = "run.validate"
+title = "validate"
+category = "Run Maven"
+icon = "maven-goal"
+
+[[contributes.commands]]
+id = "run.compile"
+title = "compile"
+category = "Run Maven"
+icon = "maven-goal"
+
+[[contributes.commands]]
+id = "run.test"
+title = "test"
+category = "Run Maven"
+icon = "maven-goal"
+
+[[contributes.commands]]
+id = "run.package"
+title = "package"
+category = "Run Maven"
+icon = "maven-goal"
+
+[[contributes.commands]]
+id = "run.verify"
+title = "verify"
+category = "Run Maven"
+icon = "maven-goal"
+
+[[contributes.commands]]
+id = "run.install"
+title = "install"
+category = "Run Maven"
+icon = "maven-goal"
+
+[[contributes.commands]]
+id = "run.clean-install"
+title = "clean install"
+category = "Run Maven"
+icon = "maven-goal"
+
+[[contributes.commands]]
+id = "run.deploy"
+title = "deploy"
+category = "Run Maven"
+icon = "maven-goal"
+
+[[contributes.commands]]
+id = "run.site"
+title = "site"
+category = "Run Maven"
+icon = "maven-goal"
+
+[[contributes.commands]]
+id = "run.dependency-tree"
+title = "dependency:tree"
+category = "Run Maven"
+icon = "maven-goal"
+
+[[contributes.commands]]
+id = "run-goal"
+title = "Saved Goals…"
+category = "Run Maven"
+icon = "maven-goal"
+
+[[contributes.commands]]
+id = "run-custom-goal"
+title = "Custom Goal…"
+category = "Run Maven"
+icon = "run-anything"
+
+[[contributes.commands]]
+id = "run-goal-root"
+title = "Goal on Root Module…"
+category = "Run Maven"
+icon = "maven-project"
+
+[[contributes.commands]]
+id = "rerun-last"
+title = "Re-run Last Goal"
+category = "Run Maven"
+icon = "maven-goal"
+
+[[contributes.commands]]
+id = "reimport"
+title = "Reimport"
+category = "Run Maven"
+icon = "refresh"
+
+[[contributes.commands]]
+id = "new-goal"
+title = "New Goal…"
+category = "Run Maven"
+icon = "plus"
+
+[[contributes.commands]]
+id = "remove-goal"
+title = "Remove Saved Goals…"
+category = "Run Maven"
+icon = "trash"
+
+[[contributes.commands]]
+id = "debug.clean"
+title = "clean"
+category = "Debug Maven"
+icon = "debug"
+
+[[contributes.commands]]
+id = "debug.validate"
+title = "validate"
+category = "Debug Maven"
+icon = "debug"
+
+[[contributes.commands]]
+id = "debug.compile"
+title = "compile"
+category = "Debug Maven"
+icon = "debug"
+
+[[contributes.commands]]
+id = "debug.test"
+title = "test"
+category = "Debug Maven"
+icon = "debug"
+
+[[contributes.commands]]
+id = "debug.package"
+title = "package"
+category = "Debug Maven"
+icon = "debug"
+
+[[contributes.commands]]
+id = "debug.verify"
+title = "verify"
+category = "Debug Maven"
+icon = "debug"
+
+[[contributes.commands]]
+id = "debug.install"
+title = "install"
+category = "Debug Maven"
+icon = "debug"
+
+[[contributes.commands]]
+id = "debug.clean-install"
+title = "clean install"
+category = "Debug Maven"
+icon = "debug"
+
+[[contributes.commands]]
+id = "debug.deploy"
+title = "deploy"
+category = "Debug Maven"
+icon = "debug"
+
+[[contributes.commands]]
+id = "debug.site"
+title = "site"
+category = "Debug Maven"
+icon = "debug"
+
+[[contributes.commands]]
+id = "debug.dependency-tree"
+title = "dependency:tree"
+category = "Debug Maven"
+icon = "debug"
+
+[[contributes.commands]]
+id = "debug-goal"
+title = "Saved Goals…"
+category = "Debug Maven"
+icon = "debug"
+
+[[contributes.commands]]
+id = "debug-custom-goal"
+title = "Custom Goal…"
+category = "Debug Maven"
+icon = "debug"
+
+[[contributes.commands]]
+id = "debug-new-goal"
+title = "New Goal…"
+category = "Debug Maven"
+icon = "plus"
+
+[[contributes.keymaps]]
+command = "run-goal"
+key = "Ctrl+Alt+R"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run.clean"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run.validate"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run.compile"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run.test"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run.package"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run.verify"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run.install"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run.clean-install"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run.deploy"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run.site"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run.dependency-tree"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run-goal"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run-custom-goal"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "run-goal-root"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "rerun-last"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "reimport"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "new-goal"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "remove-goal"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug.clean"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug.validate"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug.compile"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug.test"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug.package"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug.verify"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug.install"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug.clean-install"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug.deploy"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug.site"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug.dependency-tree"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug-goal"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug-custom-goal"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "projectView.context"
+command = "debug-new-goal"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run.clean"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run.validate"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run.compile"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run.test"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run.package"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run.verify"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run.install"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run.clean-install"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run.deploy"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run.site"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run.dependency-tree"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run-goal"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run-custom-goal"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "run-goal-root"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "rerun-last"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "reimport"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "new-goal"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "remove-goal"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug.clean"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug.validate"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug.compile"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug.test"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug.package"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug.verify"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug.install"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug.clean-install"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug.deploy"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug.site"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug.dependency-tree"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug-goal"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug-custom-goal"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editor.context"
+command = "debug-new-goal"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run.clean"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run.validate"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run.compile"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run.test"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run.package"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run.verify"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run.install"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run.clean-install"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run.deploy"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run.site"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run.dependency-tree"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run-goal"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run-custom-goal"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "run-goal-root"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "rerun-last"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "reimport"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "new-goal"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "remove-goal"
+submenu = "Run Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug.clean"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug.validate"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug.compile"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug.test"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug.package"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug.verify"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug.install"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug.clean-install"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug.deploy"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug.site"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug.dependency-tree"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug-goal"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug-custom-goal"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "editorTab.context"
+command = "debug-new-goal"
+submenu = "Debug Maven"
+
+[[contributes.menus]]
+menu = "tools"
+command = "run-goal"
+
+[[contributes.menus]]
+menu = "tools"
+command = "run-goal-root"
+
+[[contributes.menus]]
+menu = "tools"
+command = "debug-goal"
+
+[[contributes.menus]]
+menu = "tools"
+command = "rerun-last"
+
+[[contributes.menus]]
+menu = "tools"
+command = "new-goal"
+
+[[contributes.menus]]
+menu = "tools"
+command = "remove-goal"
+
+[[contributes.menus]]
+menu = "tools"
+command = "reimport"
+
+# The Run tool window runs goals through these configurations. The IDE asks for
+# them only when one of these files is at the project root; the .openidea files
+# cover a folder of modules without a pom.xml of its own.
+[[contributes.runConfigurations]]
+files = ["pom.xml", ".openidea/settings.toml", ".openidea/changelists.json"]
+
+[contributes.settings]
+schema = "settings.schema.json"

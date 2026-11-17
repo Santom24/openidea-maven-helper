@@ -1,0 +1,9 @@
+Maven Helper for OpenIDEA
+Copyright 2026 Federico Santomero
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Inspired by Maven Helper for IntelliJ IDEA by Vojtech Krasa
+(https://github.com/krasa/MavenHelper). No code, icons or other material
+from that project are included; this is an independent implementation on
+the OpenIDEA plugin API.
