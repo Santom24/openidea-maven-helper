@@ -2,5 +2,5 @@
 # (first pull request only).
 name = "Federico Santomero"
 owners = ["Santom24"]                  # GitHub accounts that may change these entries
-keys = ["<public key printed by: openidea-plugin keygen ~/fsantomero.key>"]
+keys = ["bddyrrsBgAsVftRiphGg/YoUPftqhstKv2nZfu7SDJo="]
 revoked-keys = []
