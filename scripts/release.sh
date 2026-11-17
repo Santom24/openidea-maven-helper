@@ -36,15 +36,20 @@ if gh release view "$tag" -R "$repo" >/dev/null 2>&1; then echo "release $tag ex
 
 cargo test --quiet --locked
 
-# The tag (pushing it starts the Build workflow on GitHub).
+# The tag (pushing it starts the Build workflow on GitHub). An existing tag
+# is reused when only scripts/ changed since: the package is the same.
+git fetch -q origin "refs/tags/$tag:refs/tags/$tag" 2>/dev/null || true
 if ! git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
   git tag -a "$tag" -m "$tag"
 fi
-[ "$(git rev-list -n1 "$tag")" = "$(git rev-parse HEAD)" ] || { echo "$tag is not HEAD" >&2; exit 1; }
+if ! git diff --quiet "$tag" HEAD -- . ':(exclude)scripts'; then
+  echo "$tag differs from HEAD outside scripts/: bump the version" >&2
+  exit 1
+fi
 git push -q origin "$tag"
 
-echo "waiting for the Build workflow on $tag…"
-commit=$(git rev-parse HEAD)
+echo "waiting for the Build workflow on ${tag}..."
+commit=$(git rev-list -n1 "$tag")
 run=""
 for _ in $(seq 60); do
   run=$(gh run list -R "$repo" -w build.yml -e push -c "$commit" --json databaseId,headBranch \
