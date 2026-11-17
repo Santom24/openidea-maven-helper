@@ -1,15 +1,22 @@
-# Rebuilds the plugin's component from source in public and, for a release,
-# checks that the published package carries exactly that component.
+# Builds the plugin's component from source in public. A release packages
+# the component this workflow built for its tag (scripts/release.sh), and
+# the run on the published release checks that the package carries exactly
+# that component.
 #
-# - On a published release: builds the release tag and compares.
+# - On a pushed tag v*: builds it; scripts/release.sh downloads the artifact.
+# - On a published release: builds the release tag again and compares.
 # - By hand (Actions › Build › Run workflow): any ref; for a release tag the
-#   package is compared too. `cargo_home` is the path the release build
-#   mapped the cargo home to: /cargo from 0.1.2 on (scripts/release.sh);
-#   v0.1.1 was built without mapping, so its cargo home path
-#   /Users/federicosantomero/.cargo is in it.
+#   package is compared too.
+#
+# The cargo home is mapped to /cargo (`cargo_home`), its path being the only
+# machine-specific text in the component. Releases from 0.1.2 on carry this
+# workflow's build. v0.1.1 was built on macOS, which gives a different core
+# module than this Linux build even with the same toolchain and lock file.
 name: Build
 
 on:
+  push:
+    tags: ["v*"]
   release:
     types: [published]
   workflow_dispatch:
@@ -31,7 +38,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      REF: ${{ github.event.release.tag_name || inputs.ref }}
+      REF: ${{ github.event.release.tag_name || inputs.ref || github.ref_name }}
       CARGO_HOME_MAP: ${{ inputs.cargo_home || '/cargo' }}
       FALLBACK_TOOLCHAIN: ${{ inputs.toolchain || '1.100.0' }}
       GH_TOKEN: ${{ github.token }}

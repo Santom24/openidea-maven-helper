@@ -1,11 +1,11 @@
 id = "fsantomero.maven-helper"
 name = "Maven Helper"
-version = "0.1.1"
+version = "0.1.2"
 description = "Run and debug Maven goals from the right-click menu on any module, saved goals, and a Dependency Analyzer tab on pom.xml with one-click exclusions. Inspired by Maven Helper for IntelliJ IDEA."
 authors = ["Federico Santomero"]
 license = "Apache-2.0"
 homepage = "https://github.com/Santom24/openidea-maven-helper"
-change-notes = "0.1.1 — Exclude fills an existing empty <exclusions/> or <exclusions></exclusions> instead of adding a second container (which made the POM invalid). 0.1.0 — first release: Run Maven / Debug Maven submenus on files, folders and editors (module = nearest pom.xml); goals in the Run tool window with colours; New Goal… / Saved Goals… / Remove Saved Goals…, saved goals as run configurations; Reimport; Dependency Analyzer tab on pom.xml with conflicts, tree, paths, Exclude and Jump to declaration."
+change-notes = "0.1.2 — The component is built by the public GitHub Actions workflow from the release tag (reproducible build); no functional change. 0.1.1 — Exclude fills an existing empty <exclusions/> or <exclusions></exclusions> instead of adding a second container (which made the POM invalid). 0.1.0 — first release: Run Maven / Debug Maven submenus on files, folders and editors (module = nearest pom.xml); goals in the Run tool window with colours; New Goal… / Saved Goals… / Remove Saved Goals…, saved goals as run configurations; Reimport; Dependency Analyzer tab on pom.xml with conflicts, tree, paths, Exclude and Jump to declaration."
 categories = ["tools", "frameworks"]
 # build.dependencies (the IDE's resolved Maven graph) is API 1.10.
 engines.openidea = "^1.10"

@@ -119,22 +119,21 @@ package's SHA-256; `publishing/` has the registry entries.
 
 ### Reproducible builds
 
-The component is reproducible bit for bit: Rust `1.100.0` (pinned in
-`rust-toolchain.toml`), target `wasm32-wasip2`, `Cargo.lock`, and the cargo
-home mapped to a fixed path, the only machine-specific input (it appears in
-panic-message paths):
+Releases carry the component that the **Build** workflow compiled on GitHub
+from the release tag, and the workflow checks every published release
+against a fresh build. To rebuild it yourself, on Linux x86_64:
 
 ```sh
+# Rust 1.100.0 with wasm32-wasip2 (rust-toolchain.toml), Cargo.lock as is
 RUSTFLAGS="--remap-path-prefix=$HOME/.cargo=/cargo" \
   cargo build --release --locked --target wasm32-wasip2
+sha256sum target/wasm32-wasip2/release/*.wasm   # = dist/plugin.wasm of the package
 ```
 
-`openidea-plugin build` runs that cargo build and copies the result to
-`dist/plugin.wasm`. The **Build** workflow does the same on GitHub for every
-published release and checks that the release's package contains exactly that
-component. v0.1.1 predates the mapping: rebuild it with
-`--remap-path-prefix=$HOME/.cargo=/Users/federicosantomero/.cargo` (the
-workflow's `cargo_home` input).
+The cargo home path, which appears in panic messages, is the only
+machine-specific input; the host matters too (a macOS build differs).
+`scripts/release.sh <key>` tags the version, waits for the workflow, packs
+and signs its artifact and creates the GitHub release.
 
 | Path                   | What                                                              |
 | ---------------------- | ----------------------------------------------------------------- |
